@@ -9,7 +9,7 @@ sensor_manager:
 
 lidar_interface:
   ros__parameters:
-    input_topic: /scan
+    input_topic: /scan_raw
     output_topic: /inspection/scan
     frame_id: laser_frame
     range_min: 0.1
@@ -17,9 +17,9 @@ lidar_interface:
 
 camera_interface:
   ros__parameters:
-    rgb_input_topic: /camera/color/image_raw
-    depth_input_topic: /camera/depth/image_raw
-    camera_info_topic: /camera/color/camera_info
+    rgb_input_topic: /ascamera/camera_publisher/rgb0/image
+    depth_input_topic: /ascamera/camera_publisher/depth0/image_raw
+    camera_info_topic: /ascamera/camera_publisher/depth0/camera_info
     rgb_output_topic: /inspection/rgb_image
     depth_output_topic: /inspection/depth_image
     camera_info_output_topic: /inspection/camera_info

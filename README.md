@@ -184,3 +184,25 @@ ros2 service call /slam_toolbox/serialize_map \
 
 ros2 run nav2_map_server map_saver_cli -f ~/inspection_maps/classroom_map
 ```
+
+### 地图转成图像格式
+
+`map_saver_cli` 保存后会生成：
+
+- `~/inspection_maps/classroom_map.yaml`
+- `~/inspection_maps/classroom_map.pgm`
+
+其中 `.pgm` 本身就是地图图像文件，可以直接打开或再转换成 `.png`。
+
+```bash
+# 先保存 nav2 地图
+ros2 run nav2_map_server map_saver_cli -f ~/inspection_maps/classroom_map
+
+# 生成结果
+ls ~/inspection_maps/classroom_map.*
+
+# 如果需要转成 PNG，可直接用 OpenCV
+python3 -c "import cv2; img=cv2.imread('$HOME/inspection_maps/classroom_map.pgm', cv2.IMREAD_UNCHANGED); cv2.imwrite('$HOME/inspection_maps/classroom_map.png', img)"
+```
+
+如果只想查看地图图像，也可以直接打开 `classroom_map.pgm`。
