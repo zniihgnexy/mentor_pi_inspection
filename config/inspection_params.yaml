@@ -1,0 +1,82 @@
+# Inspection system parameters
+inspection_manager:
+  ros__parameters:
+    use_sim_time: false
+
+sensor_manager:
+  ros__parameters:
+    use_sim_time: false
+
+lidar_interface:
+  ros__parameters:
+    input_topic: /scan
+    output_topic: /inspection/scan
+    frame_id: laser_frame
+    range_min: 0.1
+    range_max: 12.0
+
+camera_interface:
+  ros__parameters:
+    rgb_input_topic: /camera/color/image_raw
+    depth_input_topic: /camera/depth/image_raw
+    camera_info_topic: /camera/color/camera_info
+    rgb_output_topic: /inspection/rgb_image
+    depth_output_topic: /inspection/depth_image
+
+slam_node:
+  ros__parameters:
+    mode: localization  # 'mapping' for first run, 'localization' for patrol
+    map_save_dir: ~/inspection_maps
+    map_name: classroom_map
+
+path_planner:
+  ros__parameters:
+    waypoints_file: ~/inspection_maps/waypoints.yaml
+    patrol_speed: 0.3
+    waypoint_tolerance: 0.3
+
+motion_controller:
+  ros__parameters:
+    max_linear_x: 0.4
+    max_linear_y: 0.4
+    max_angular_z: 1.0
+    cmd_input_topic: /inspection/cmd_vel
+    cmd_output_topic: /cmd_vel
+    enable_safety: true
+
+power_led_detector:
+  ros__parameters:
+    image_topic: /inspection/rgb_image
+    detection_enabled: true
+    roi_x_ratio: 0.3
+    roi_y_ratio: 0.6
+    roi_w_ratio: 0.4
+    roi_h_ratio: 0.3
+    brightness_threshold: 80
+    led_min_area: 30
+    led_max_area: 5000
+    debug_image: true
+
+data_recorder:
+  ros__parameters:
+    output_dir: ~/inspection_data
+    output_format: csv
+    session_name: ''
+
+scheduler:
+  ros__parameters:
+    detection_duration: 3.0
+    detection_samples: 5
+
+depth_fusion:
+  ros__parameters:
+    lidar_topic: /scan
+    depth_topic: /inspection/depth_image
+    camera_info_topic: /inspection/camera_info
+    fused_topic: /inspection/fused_scan
+    depth_min_range: 0.2
+    depth_max_range: 5.0
+    fusion_enabled: true
+    camera_height: 0.15
+    scan_height_min: 0.05
+    scan_height_max: 0.5
