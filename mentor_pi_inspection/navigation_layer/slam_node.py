@@ -7,6 +7,7 @@ Supports two modes:
 """
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import QoSProfile, QoSDurabilityPolicy, QoSReliabilityPolicy, QoSHistoryPolicy
 from std_msgs.msg import String, Bool
 from nav_msgs.msg import OccupancyGrid
 from slam_toolbox.srv import SaveMap, SerializePoseGraph
@@ -30,8 +31,14 @@ class SlamNode(Node):
 
         os.makedirs(self.map_dir, exist_ok=True)
 
-        # Subscribe to map updates
-        self.create_subscription(OccupancyGrid, '/map', self.map_callback, 10)
+        # Subscribe to map updates (match SLAM Toolbox's transient_local QoS)
+        map_qos = QoSProfile(
+            durability=QoSDurabilityPolicy.TRANSIENT_LOCAL,
+            reliability=QoSReliabilityPolicy.RELIABLE,
+            history=QoSHistoryPolicy.KEEP_LAST,
+            depth=1,
+        )
+        self.create_subscription(OccupancyGrid, '/map', self.map_callback, map_qos)
 
         # Publishers
         self.status_pub = self.create_publisher(String, '/inspection/slam_status', 10)
