@@ -21,12 +21,14 @@ class CameraInterface(Node):
         self.declare_parameter('camera_info_topic', '/camera/color/camera_info')
         self.declare_parameter('rgb_output_topic', '/inspection/rgb_image')
         self.declare_parameter('depth_output_topic', '/inspection/depth_image')
+        self.declare_parameter('camera_info_output_topic', '/inspection/camera_info')
 
         rgb_in = self.get_parameter('rgb_input_topic').value
         depth_in = self.get_parameter('depth_input_topic').value
         info_in = self.get_parameter('camera_info_topic').value
         rgb_out = self.get_parameter('rgb_output_topic').value
         depth_out = self.get_parameter('depth_output_topic').value
+        info_out = self.get_parameter('camera_info_output_topic').value
 
         # Subscribers
         self.rgb_sub = self.create_subscription(Image, rgb_in, self.rgb_callback, 10)
@@ -36,7 +38,7 @@ class CameraInterface(Node):
         # Publishers
         self.rgb_pub = self.create_publisher(Image, rgb_out, 10)
         self.depth_pub = self.create_publisher(Image, depth_out, 10)
-        self.info_pub = self.create_publisher(CameraInfo, '/inspection/camera_info', 10)
+        self.info_pub = self.create_publisher(CameraInfo, info_out, 10)
         self.status_pub = self.create_publisher(Bool, '/inspection/camera_status', 10)
 
         self._last_rgb_time = None

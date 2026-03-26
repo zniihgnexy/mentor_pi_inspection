@@ -22,6 +22,7 @@ camera_interface:
     camera_info_topic: /camera/color/camera_info
     rgb_output_topic: /inspection/rgb_image
     depth_output_topic: /inspection/depth_image
+    camera_info_output_topic: /inspection/camera_info
 
 slam_node:
   ros__parameters:
@@ -70,7 +71,7 @@ scheduler:
 
 depth_fusion:
   ros__parameters:
-    lidar_topic: /scan
+    lidar_topic: /inspection/scan
     depth_topic: /inspection/depth_image
     camera_info_topic: /inspection/camera_info
     fused_topic: /inspection/fused_scan

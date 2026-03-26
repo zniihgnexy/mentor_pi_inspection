@@ -11,6 +11,15 @@ def generate_launch_description():
     params = os.path.join(pkg_dir, 'config', 'inspection_params.yaml')
 
     return LaunchDescription([
+        # Lidar interface
+        Node(
+            package='mentor_pi_inspection',
+            executable='lidar_interface',
+            name='lidar_interface',
+            output='screen',
+            parameters=[params],
+        ),
+
         # Camera interface
         Node(
             package='mentor_pi_inspection',

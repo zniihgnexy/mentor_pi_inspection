@@ -12,6 +12,7 @@ import os
 def generate_launch_description():
     pkg_dir = get_package_share_directory('mentor_pi_inspection')
     slam_params = os.path.join(pkg_dir, 'config', 'slam_params.yaml')
+    inspection_params = os.path.join(pkg_dir, 'config', 'inspection_params.yaml')
 
     return LaunchDescription([
         DeclareLaunchArgument('use_sim_time', default_value='false'),
@@ -44,6 +45,7 @@ def generate_launch_description():
             executable='lidar_interface',
             name='lidar_interface',
             output='screen',
+            parameters=[inspection_params],
         ),
 
         Node(
