@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Keyboard teleop for manual SLAM mapping on the MentorPi mecanum chassis."""
+"""Minimal keyboard teleop for SLAM mapping."""
 import select
 import sys
 import termios
@@ -10,26 +10,19 @@ from geometry_msgs.msg import Twist
 from rclpy.node import Node
 from std_msgs.msg import Bool
 
-from mentor_pi_inspection.control_layer.keyboard_bindings import (
-    HELP_KEYS,
-    QUIT_KEYS,
-    command_for_key,
-)
-
 
 HELP_TEXT = """
-Keyboard teleop for SLAM mapping
+Keyboard teleop
   w/s : forward/backward
   a/d : strafe left/right
   q/e : rotate left/right
   space or k : emergency stop
-  h or ? : show help
   Ctrl-C : quit
 """
 
 
 class KeyboardTeleop(Node):
-    """Publish manual velocity commands from a terminal keyboard."""
+    """Keyboard teleop for manual MentorPi movement."""
 
     def __init__(self):
         super().__init__('keyboard_teleop')
@@ -40,118 +33,99 @@ class KeyboardTeleop(Node):
         self.declare_parameter('lateral_speed', 0.25)
         self.declare_parameter('angular_speed', 0.8)
         self.declare_parameter('idle_timeout', 0.25)
-        self.declare_parameter('poll_period', 0.05)
 
         self.cmd_vel_topic = self.get_parameter('cmd_vel_topic').value
-        self.emergency_stop_topic = self.get_parameter('emergency_stop_topic').value
+        self.estop_topic = self.get_parameter('emergency_stop_topic').value
         self.linear_speed = float(self.get_parameter('linear_speed').value)
         self.lateral_speed = float(self.get_parameter('lateral_speed').value)
         self.angular_speed = float(self.get_parameter('angular_speed').value)
         self.idle_timeout = float(self.get_parameter('idle_timeout').value)
-        self.poll_period = float(self.get_parameter('poll_period').value)
 
         if not sys.stdin.isatty():
             raise RuntimeError('keyboard_teleop requires an interactive terminal')
 
         self.cmd_pub = self.create_publisher(Twist, self.cmd_vel_topic, 10)
-        self.estop_pub = self.create_publisher(Bool, self.emergency_stop_topic, 10)
+        self.estop_pub = self.create_publisher(Bool, self.estop_topic, 10)
 
-        self._terminal_fd = sys.stdin.fileno()
-        self._terminal_settings = termios.tcgetattr(self._terminal_fd)
-        tty.setcbreak(self._terminal_fd)
+        self._fd = sys.stdin.fileno()
+        self._settings = termios.tcgetattr(self._fd)
+        tty.setcbreak(self._fd)
 
-        self._motion_active = False
-        self._estop_active = False
+        self._moving = False
+        self._estop = False
         self._last_input_time = self.get_clock().now()
 
-        self.create_timer(self.poll_period, self.poll_keyboard)
-        self.get_logger().info(
-            f'Keyboard teleop publishing to {self.cmd_vel_topic} '
-            f'with estop topic {self.emergency_stop_topic}')
-        self.print_help()
+        self.create_timer(0.05, self.poll_keyboard)
+        for line in HELP_TEXT.strip().splitlines():
+            self.get_logger().info(line)
 
     def poll_keyboard(self):
-        """Poll stdin without blocking the ROS event loop."""
         key = self.read_key()
         now = self.get_clock().now()
 
         if key:
             self._last_input_time = now
-            if key in QUIT_KEYS:
-                self.get_logger().info('Keyboard teleop exiting')
-                self.publish_stop()
+            if key == '\x03':
+                self.stop()
                 rclpy.shutdown()
                 return
-            if key.lower() in HELP_KEYS:
-                self.print_help()
-                return
-
-            command = command_for_key(
-                key,
-                linear_speed=self.linear_speed,
-                lateral_speed=self.lateral_speed,
-                angular_speed=self.angular_speed,
-            )
-            if command is None:
-                return
-
-            if command.emergency_stop:
-                self.publish_emergency_stop()
-            else:
-                self.publish_motion(command.linear_x, command.linear_y, command.angular_z)
-        elif self._motion_active:
+            self.handle_key(key)
+        elif self._moving:
             elapsed = (now - self._last_input_time).nanoseconds / 1e9
             if elapsed >= self.idle_timeout:
-                self.publish_stop()
+                self.stop()
 
     def read_key(self):
-        """Return a single keypress if one is available."""
         ready, _, _ = select.select([sys.stdin], [], [], 0.0)
         if not ready:
             return ''
         return sys.stdin.read(1)
 
-    def publish_motion(self, linear_x: float, linear_y: float, angular_z: float):
-        """Publish a movement command and release estop if needed."""
-        if self._estop_active:
+    def handle_key(self, key: str):
+        key = key.lower()
+
+        if key in (' ', 'k'):
+            self.publish_estop(True)
+            self.stop()
+            self._estop = True
+            return
+
+        twist = Twist()
+        if key == 'w':
+            twist.linear.x = self.linear_speed
+        elif key == 's':
+            twist.linear.x = -self.linear_speed
+        elif key == 'a':
+            twist.linear.y = self.lateral_speed
+        elif key == 'd':
+            twist.linear.y = -self.lateral_speed
+        elif key == 'q':
+            twist.angular.z = self.angular_speed
+        elif key == 'e':
+            twist.angular.z = -self.angular_speed
+        else:
+            return
+
+        if self._estop:
             self.publish_estop(False)
-            self._estop_active = False
+            self._estop = False
 
-        cmd = Twist()
-        cmd.linear.x = linear_x
-        cmd.linear.y = linear_y
-        cmd.angular.z = angular_z
-        self.cmd_pub.publish(cmd)
-        self._motion_active = True
+        self.cmd_pub.publish(twist)
+        self._moving = True
 
-    def publish_stop(self):
-        """Publish a zero-velocity command."""
+    def stop(self):
         self.cmd_pub.publish(Twist())
-        self._motion_active = False
-
-    def publish_emergency_stop(self):
-        """Latch estop and send an immediate zero command."""
-        self.publish_stop()
-        self.publish_estop(True)
-        self._estop_active = True
+        self._moving = False
 
     def publish_estop(self, enabled: bool):
         msg = Bool()
         msg.data = enabled
         self.estop_pub.publish(msg)
 
-    def print_help(self):
-        for line in HELP_TEXT.strip().splitlines():
-            self.get_logger().info(line)
-
     def restore_terminal(self):
-        if self._terminal_settings is not None:
-            termios.tcsetattr(
-                self._terminal_fd,
-                termios.TCSADRAIN,
-                self._terminal_settings,
-            )
-            self._terminal_settings = None
+        if self._settings is not None:
+            termios.tcsetattr(self._fd, termios.TCSADRAIN, self._settings)
+            self._settings = None
 
 
 def main(args=None):
@@ -165,7 +139,7 @@ def main(args=None):
     finally:
         if node is not None:
             if rclpy.ok():
-                node.publish_stop()
+                node.stop()
             node.restore_terminal()
             node.destroy_node()
         if rclpy.ok():

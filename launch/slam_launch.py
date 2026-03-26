@@ -46,7 +46,6 @@ def generate_launch_description():
             output='screen',
         ),
 
-        # Route manual teleop commands through the safety-limited velocity bridge
         Node(
             package='mentor_pi_inspection',
             executable='motion_controller',

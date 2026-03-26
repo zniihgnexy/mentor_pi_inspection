@@ -57,21 +57,13 @@ source install/setup.bash
 
 ### 第一步：建图
 
-在教室环境中手动遥控机器人走一圈，建立地图：
+在教室环境中用手柄遥控机器人走一圈，建立地图：
 
 ```bash
-# 终端 1：启动 SLAM 建图
+# 启动 SLAM 建图
 ros2 launch mentor_pi_inspection slam_launch.py
 
-# 终端 2：启动键盘遥控
-ros2 run mentor_pi_inspection keyboard_teleop
-
-# 键位：
-#   w/s 前进/后退
-#   a/d 左右平移（麦克纳姆底盘）
-#   q/e 左右旋转
-#   space 或 k 急停
-
+# 用手柄遥控机器人在教室中移动
 # 建图完成后，保存地图：
 ros2 service call /slam_toolbox/serialize_map \
   slam_toolbox/srv/SerializePoseGraph \
@@ -145,43 +137,26 @@ rviz2
 - 相同型号机器人之间可直接部署，无需修改代码
 - 只需根据实际环境重新建图和设置巡检路径
 
-## 附录：SLAM 建图键盘控制与操作步骤
+## 附录：键盘控制建图说明
 
-本节是对“第一步：建图”的补充说明，不修改上面的原始流程，只补充实际操作细节。
+本节仅补充键盘建图操作，不修改上面的原始 README 内容。
 
-### 1. 建图前需要先做什么
+### 启动顺序
 
 ```bash
-# 在工作空间重新编译一次（新增了 keyboard_teleop 可执行节点）
 cd ~/inspection_ws
+source /opt/ros/humble/setup.bash
 colcon build --packages-select mentor_pi_inspection
+source install/setup.bash
 
-# 每个新终端都要 source
-source ~/inspection_ws/install/setup.bash
-```
-
-### 2. 建图时你要按什么顺序操作
-
-```bash
-# 终端 1：启动 SLAM
+# 终端 1
 ros2 launch mentor_pi_inspection slam_launch.py
 
-# 终端 2：启动键盘控制
+# 终端 2
 ros2 run mentor_pi_inspection keyboard_teleop
-
-# 可选：终端 3 查看地图
-rviz2
 ```
 
-实际建图建议按下面顺序走：
-
-1. 先让机器人原地小角度旋转，确认 `/map` 开始更新。
-2. 贴着教室外沿慢速走一圈，优先把墙边、角落、门口轮廓扫完整。
-3. 再走中间通道，补齐桌椅之间的区域，保证有一定重叠扫描。
-4. 转弯和狭窄位置要慢，不要急停急转，避免雷达匹配发散。
-5. 地图闭环后回到起点附近，再保存地图。
-
-### 3. 键盘控制映射
+### 键盘映射
 
 - `w`：前进
 - `s`：后退
@@ -192,23 +167,20 @@ rviz2
 - `space` 或 `k`：急停
 - `Ctrl-C`：退出键盘控制
 
-说明：`slam_launch.py` 现在会同时启动 `motion_controller`，键盘控制发布到 `/inspection/cmd_vel`，再由控制器转发到 `/cmd_vel`。
+### 建图时怎么操作
 
-### 4. 建图完成后要做什么
+1. 先原地缓慢旋转一小圈，确认地图开始更新。
+2. 沿教室外围慢速走一圈，把墙边和角落先扫完整。
+3. 再走中间通道，尽量让相邻路径有重叠区域。
+4. 转弯和狭窄位置放慢速度，避免急转。
+5. 回到起点附近后保存地图。
+
+### 建图完成后保存
 
 ```bash
-# 保存 slam_toolbox 图
 ros2 service call /slam_toolbox/serialize_map \
   slam_toolbox/srv/SerializePoseGraph \
   "{filename: '$HOME/inspection_maps/classroom_map'}"
 
-# 保存 nav2 地图
 ros2 run nav2_map_server map_saver_cli -f ~/inspection_maps/classroom_map
 ```
-
-确认以下文件存在即可：
-
-- `~/inspection_maps/classroom_map.data`
-- `~/inspection_maps/classroom_map.posegraph`
-- `~/inspection_maps/classroom_map.pgm`
-- `~/inspection_maps/classroom_map.yaml`
