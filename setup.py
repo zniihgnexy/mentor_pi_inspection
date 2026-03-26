@@ -36,6 +36,7 @@ setup(
             'scheduler = mentor_pi_inspection.control_layer.scheduler:main',
             'data_recorder = mentor_pi_inspection.data_layer.data_recorder:main',
             'depth_fusion = mentor_pi_inspection.sensor_layer.depth_fusion:main',
+            'save_camera_image = mentor_pi_inspection.sensor_layer.save_camera_image:main',
             'evaluation = mentor_pi_inspection.test.test_evaluation:main',
         ],
     },

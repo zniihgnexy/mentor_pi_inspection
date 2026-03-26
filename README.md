@@ -70,7 +70,7 @@ ros2 service call /slam_toolbox/serialize_map \
   "{filename: '$HOME/inspection_maps/classroom_map'}"
 
 # 同时保存 nav2 格式地图
-ros2 run nav2_map_server map_saver_cli -f ~/inspection_maps/classroom_map
+ros2 run nav2_map_server map_saver_cli -f ~/inspection_maps/classroom_map --ros-args -p map_subscribe_transient_local:=true
 ```
 
 ### 第二步：设置巡检路径
@@ -182,7 +182,7 @@ ros2 service call /slam_toolbox/serialize_map \
   slam_toolbox/srv/SerializePoseGraph \
   "{filename: '$HOME/inspection_maps/classroom_map'}"
 
-ros2 run nav2_map_server map_saver_cli -f ~/inspection_maps/classroom_map
+ros2 run nav2_map_server map_saver_cli -f ~/inspection_maps/classroom_map --ros-args -p map_subscribe_transient_local:=true
 ```
 
 ### 地图转成图像格式
@@ -196,7 +196,7 @@ ros2 run nav2_map_server map_saver_cli -f ~/inspection_maps/classroom_map
 
 ```bash
 # 先保存 nav2 地图
-ros2 run nav2_map_server map_saver_cli -f ~/inspection_maps/classroom_map
+ros2 run nav2_map_server map_saver_cli -f ~/inspection_maps/classroom_map --ros-args -p map_subscribe_transient_local:=true
 
 # 生成结果
 ls ~/inspection_maps/classroom_map.*
@@ -206,3 +206,23 @@ python3 -c "import cv2; img=cv2.imread('$HOME/inspection_maps/classroom_map.pgm'
 ```
 
 如果只想查看地图图像，也可以直接打开 `classroom_map.pgm`。
+
+## 附录：保存相机图像
+
+将当前相机画面保存为一张 JPG 图片到 `~/inspection_data/camera_raw/`：
+
+```bash
+ros2 run mentor_pi_inspection save_camera_image
+```
+
+可通过参数指定话题和输出目录：
+
+```bash
+# 使用处理后的话题
+ros2 run mentor_pi_inspection save_camera_image --ros-args -p topic:=/inspection/rgb_image
+
+# 指定输出目录
+ros2 run mentor_pi_inspection save_camera_image --ros-args -p output_dir:=~/my_photos
+```
+
+图片文件名格式为 `camera_YYYYMMDD_HHMMSS.jpg`。
