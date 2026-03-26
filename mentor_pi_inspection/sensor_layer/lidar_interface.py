@@ -46,7 +46,7 @@ class LidarInterface(Node):
 
         filtered = LaserScan()
         filtered.header = msg.header
-        filtered.header.frame_id = self.frame_id
+        # Keep the original frame_id so it matches the robot's TF tree
         filtered.angle_min = msg.angle_min
         filtered.angle_max = msg.angle_max
         filtered.angle_increment = msg.angle_increment

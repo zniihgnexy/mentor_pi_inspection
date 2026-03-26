@@ -5,6 +5,7 @@ Provides unified access to RGB and depth image streams.
 """
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import Image, CameraInfo
 from std_msgs.msg import Bool
 
@@ -30,10 +31,10 @@ class CameraInterface(Node):
         depth_out = self.get_parameter('depth_output_topic').value
         info_out = self.get_parameter('camera_info_output_topic').value
 
-        # Subscribers
-        self.rgb_sub = self.create_subscription(Image, rgb_in, self.rgb_callback, 10)
-        self.depth_sub = self.create_subscription(Image, depth_in, self.depth_callback, 10)
-        self.info_sub = self.create_subscription(CameraInfo, info_in, self.info_callback, 10)
+        # Subscribers (use sensor data QoS to match camera driver's best_effort publishing)
+        self.rgb_sub = self.create_subscription(Image, rgb_in, self.rgb_callback, qos_profile_sensor_data)
+        self.depth_sub = self.create_subscription(Image, depth_in, self.depth_callback, qos_profile_sensor_data)
+        self.info_sub = self.create_subscription(CameraInfo, info_in, self.info_callback, qos_profile_sensor_data)
 
         # Publishers
         self.rgb_pub = self.create_publisher(Image, rgb_out, 10)

@@ -6,6 +6,7 @@ from datetime import datetime
 
 import rclpy
 from rclpy.node import Node
+from rclpy.qos import qos_profile_sensor_data
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 import cv2
@@ -25,7 +26,7 @@ class SaveCameraImage(Node):
 
         os.makedirs(self.output_dir, exist_ok=True)
 
-        self.create_subscription(Image, topic, self.image_callback, 1)
+        self.create_subscription(Image, topic, self.image_callback, qos_profile_sensor_data)
         self.get_logger().info(f'Waiting for image on {topic} ...')
 
     def image_callback(self, msg: Image):
